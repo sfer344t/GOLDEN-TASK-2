@@ -1,0 +1,37 @@
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import pandas as pd
+
+# Configuration for your email account
+SMTP_SERVER = 'smtp.example.com'  # e.g., 'smtp.gmail.com' for Gmail
+SMTP_PORT = 587
+EMAIL = 'your-email@example.com'
+PASSWORD = 'your-email-password'
+
+# Load recipient data
+recipients = pd.read_csv('recipients.csv')
+
+# Load email template
+with open('email_template.txt', 'r') as file:
+    email_template = file.read()
+
+def send_email(to_email, subject, body):
+    msg = MIMEMultipart()
+    msg['From'] = EMAIL
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+    
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+        server.starttls()
+        server.login(EMAIL, PASSWORD)
+        server.sendmail(EMAIL, to_email, msg.as_string())
+
+# Loop through the recipients and send personalized emails
+for index, row in recipients.iterrows():
+    personalized_body = email_template.format(name=row['name'], preference=row['preference'])
+    subject = personalized_body.split('\n')[0].replace('Subject: ', '')
+    send_email(row['email'], subject, personalized_body)
+
+print("Emails sent successfully!")
